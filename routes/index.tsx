@@ -1,52 +1,47 @@
 import { FreshContext, Handlers, PageProps } from "$fresh/server.ts";
-import axios from "https://esm.sh/axios@1.8.1";
 import PhoneForm from "../components/PhoneForm.tsx";
-import Link from "../components/Link.tsx";
+import { ValidatePhoneAPI } from "../types.tsx";
 
 interface Data {
   phone?: string;
   country?: string;
+  valid?: boolean;
 }
 
 export const handler: Handlers<Data> = {
   GET: async (req: Request, ctx: FreshContext<unknown, Data>) => {
     const url = new URL(req.url);
     const phone = url.searchParams.get("phone");
-    if (!phone) return ctx.render();
     const API_KEY = Deno.env.get("API_KEY");
     if (!API_KEY) return new Response("No API_KEY provided", { status: 500 });
 
-    const response = await axios.get<Data>(
+    const response = await fetch(
       `https://api.api-ninjas.com/v1/validatephone?number=${phone}`,
       { headers: { "X-Api-Key": API_KEY } },
     );
+    const apiData: ValidatePhoneAPI = await response.json();
+    console.log("Fetched data:", apiData);
 
-    const data: Data = { phone, country: response.data.country };
-
+    let data: Data = {};
+    if (apiData.is_valid) {
+      data = {
+        phone: apiData.format_e164,
+        valid: apiData.is_valid,
+        country: apiData.country,
+      };
+    }
+    console.log("Teléfono: " + phone);
     return ctx.render(data);
   },
 };
 
 const Page = (props: PageProps<Data>) => {
-  if (props) {
-    return (
-      <>
-        <div>
-          <PhoneForm />
-        </div>
-        <div>
-          <Link phone={props.data.phone} country={props.data.country} />
-        </div>
-      </>
-    );
-  } else {
-    return (
-      <>
-        <div>
-          <PhoneForm />
-        </div>
-      </>
-    );
-  }
+  return (
+    <>
+      <div>
+        <PhoneForm data={props.data} />
+      </div>
+    </>
+  );
 };
 export default Page;

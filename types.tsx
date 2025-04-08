@@ -1,6 +1,8 @@
 // URL : https://api.api-ninjas.com/v1/validatephone?number=+12065550100
 export type ValidatePhoneAPI = { // Introducimos 'number' sacamos 'country'
+  format_e164: string;
   country: string;
+  is_valid: boolean;
 };
 
 // URL : https://api.api-ninjas.com/v1/country?name=United States
